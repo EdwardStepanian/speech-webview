@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Speech Recognition</title>
+</head>
+<body>
+<script>
+    let recognition;
+    let isListening = false;
+    console.log('listening');
+    const startRecognition = async () => {
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.interimResults = false;
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isListening = true;
+                window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'log', message: 'Speech started' }));
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'result', transcript }));
+            };
+
+            recognition.onerror = (event) => {
+                window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'error', error: event.error }));
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'log', message: 'Speech ended' }));
+            };
+
+            recognition.start();
+        } catch (err) {
+            window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'error', error: err.message }));
+        }
+    };
+
+    const stopRecognition = () => {
+        if (recognition && isListening) {
+            recognition.stop();
+        }
+    };
+
+    const onMessage = (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'start') startRecognition();
+            if (msg.type === 'stop') stopRecognition();
+        } catch (err) {
+            window.ReactNativeWebView?.postMessage(JSON.stringify({ type: 'error', error: 'Invalid message format' }));
+        }
+    };
+
+    window.addEventListener('message', onMessage);
+    document.addEventListener('message', onMessage); // Android fallback
+</script>
+</body>
+</html>
