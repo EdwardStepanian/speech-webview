@@ -5,10 +5,11 @@
     <title>Speech Recognition</title>
 </head>
 <body>
+<button onclick="startRecognition()">Tap to Speak</button>
+
 <script>
     let recognition;
     let isListening = false;
-    <button onclick="startRecognition()">Tap to Speak</button>
 
     const startRecognition = async () => {
         try {
